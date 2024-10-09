@@ -389,3 +389,61 @@ class Pyramid(Shape):
             return 0, 0  # Aquí puedes ajustar las coordenadas UV si es necesario
 
         return None, None
+
+class Cylinder:
+    def __init__(self, position, radius, height, material, rotation=None):
+        self.position = np.array(position)
+        self.radius = radius
+        self.height = height
+        self.material = material
+        self.rotation = rotation if rotation else [0, 0, 0]  # Rotación opcional en X, Y, Z
+        self.type = "Cylinder"
+
+        # Aplica la rotación a la base del cilindro si es necesario
+        self.apply_rotation()
+
+    def apply_rotation(self):
+        # Implementar la rotación alrededor de los ejes X, Y, Z si es necesario
+        pass
+
+    def ray_intersect(self, origin, direction):
+        """Calcula la intersección de un rayo con el cilindro."""
+        d = np.array(direction)
+        o = np.array(origin)
+
+        # Cilindro orientado a lo largo del eje Y
+        oc = o - self.position
+
+        a = d[0] ** 2 + d[2] ** 2
+        b = 2 * (oc[0] * d[0] + oc[2] * d[2])
+        c = oc[0] ** 2 + oc[2] ** 2 - self.radius ** 2
+
+        discriminant = b ** 2 - 4 * a * c
+
+        if discriminant < 0:
+            return None
+
+        sqrt_discriminant = np.sqrt(discriminant)
+        t0 = (-b - sqrt_discriminant) / (2 * a)
+        t1 = (-b + sqrt_discriminant) / (2 * a)
+
+        if t0 > t1:
+            t0, t1 = t1, t0
+
+        # Verifica si el rayo intersecta la tapa superior o inferior del cilindro
+        y0 = oc[1] + t0 * d[1]
+        y1 = oc[1] + t1 * d[1]
+
+        if (y0 < 0 or y0 > self.height) and (y1 < 0 or y1 > self.height):
+            return None
+
+        t = t0 if y0 >= 0 and y0 <= self.height else t1
+        if t < 0:
+            return None
+
+        # Punto de intersección en 3D
+        P = o + t * d
+        normal = np.array([P[0] - self.position[0], 0, P[2] - self.position[2]])
+        normal /= np.linalg.norm(normal)
+
+        return Intercept(point=P, normal=normal, distance=t, obj=self, rayDirection=d, texCords=None)
